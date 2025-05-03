@@ -30,21 +30,36 @@ export async function validateOrder(params, sessionManager) {
       // Validate the order with Domino's API
       await order.validate();
 
+      // Print the entire order object to the console
+      console.dir(order, { depth: null });
+
       // Update the order in the session
       sessionManager.updateOrder(orderId, order);
 
-      return {
-        orderId,
-        status: "validated",
-        isValid: true,
-      };
+      // Return a serializable JSON representation of the order
+      if (typeof order.toJSON === "function") {
+        return order.toJSON();
+      } else if (order.payload) {
+        return order.payload;
+      } else {
+        // Fallback: deep clone (may lose non-serializable fields)
+        return JSON.parse(JSON.stringify(order));
+      }
     } catch (error) {
       // If validation fails, provide information about the failure
+      let serializableOrder;
+      if (order) {
+        if (typeof order.toJSON === "function") {
+          serializableOrder = order.toJSON();
+        } else if (order.payload) {
+          serializableOrder = order.payload;
+        } else {
+          serializableOrder = JSON.parse(JSON.stringify(order));
+        }
+      }
       return {
-        orderId,
-        status: "validation_failed",
-        isValid: false,
         error: error.message,
+        order: serializableOrder
       };
     }
   } catch (error) {
