@@ -30,21 +30,19 @@ export async function validateOrder(params, sessionManager) {
       // Validate the order with Domino's API
       await order.validate();
 
+      // Print the entire order object to the console
+      console.dir(order, { depth: null });
+
       // Update the order in the session
       sessionManager.updateOrder(orderId, order);
 
-      return {
-        orderId,
-        status: "validated",
-        isValid: true,
-      };
+      // Return the entire order object as JSON
+      return order;
     } catch (error) {
       // If validation fails, provide information about the failure
       return {
-        orderId,
-        status: "validation_failed",
-        isValid: false,
         error: error.message,
+        order: order
       };
     }
   } catch (error) {
