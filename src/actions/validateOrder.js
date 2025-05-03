@@ -36,13 +36,30 @@ export async function validateOrder(params, sessionManager) {
       // Update the order in the session
       sessionManager.updateOrder(orderId, order);
 
-      // Return the entire order object as JSON
-      return order;
+      // Return a serializable JSON representation of the order
+      if (typeof order.toJSON === "function") {
+        return order.toJSON();
+      } else if (order.payload) {
+        return order.payload;
+      } else {
+        // Fallback: deep clone (may lose non-serializable fields)
+        return JSON.parse(JSON.stringify(order));
+      }
     } catch (error) {
       // If validation fails, provide information about the failure
+      let serializableOrder;
+      if (order) {
+        if (typeof order.toJSON === "function") {
+          serializableOrder = order.toJSON();
+        } else if (order.payload) {
+          serializableOrder = order.payload;
+        } else {
+          serializableOrder = JSON.parse(JSON.stringify(order));
+        }
+      }
       return {
         error: error.message,
-        order: order
+        order: serializableOrder
       };
     }
   } catch (error) {
